@@ -23,6 +23,56 @@ serve(async (req) => {
   }
 
   try {
+    // ---- Auth: require valid JWT ----
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsErr } = await supabaseAuth.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const userId = claimsData.claims.sub as string;
+
+    // ---- Service-role client for DB operations ----
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    // ---- Quota check ----
+    const { data: canGen, error: canGenErr } = await supabase.rpc("can_generate", {
+      p_user_id: userId,
+    });
+    if (canGenErr) {
+      console.error("can_generate error:", canGenErr);
+      return new Response(
+        JSON.stringify({ error: "Failed to check quota" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    if (!canGen) {
+      return new Response(
+        JSON.stringify({
+          error: "Daily limit reached. Free plan allows 3 dossiers per day. Upgrade to Pro for unlimited.",
+        }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const { username } = await req.json();
     if (!username || typeof username !== "string" || !/^[a-zA-Z0-9-]{1,39}$/.test(username)) {
       return new Response(
@@ -127,11 +177,6 @@ Notable projects: ${topRepos.map((r) => `${r.name} (${r.stars}★)${r.descriptio
     }
 
     // 4) Save to database (upsert)
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-
     const profilePayload = {
       github_username: cleanUser,
       name: user.name || null,
@@ -159,6 +204,15 @@ Notable projects: ${topRepos.map((r) => `${r.name} (${r.stars}★)${r.descriptio
         JSON.stringify({ error: "Failed to save profile" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    }
+
+    // 5) Log this generation (counts toward daily quota)
+    const { error: logErr } = await supabase
+      .from("generation_log")
+      .insert({ user_id: userId, github_username: cleanUser });
+    if (logErr) {
+      console.error("generation_log insert error:", logErr);
+      // non-fatal — profile was saved
     }
 
     return new Response(JSON.stringify({ profile: saved }), {
