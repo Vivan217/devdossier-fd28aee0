@@ -14,13 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          ai_summary: string | null
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          followers: number | null
+          following: number | null
+          github_username: string
+          id: string
+          location: string | null
+          name: string | null
+          public_repos: number | null
+          top_languages: Json | null
+          top_repos: Json | null
+          total_stars: number | null
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          ai_summary?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          followers?: number | null
+          following?: number | null
+          github_username: string
+          id?: string
+          location?: string | null
+          name?: string | null
+          public_repos?: number | null
+          top_languages?: Json | null
+          top_repos?: Json | null
+          total_stars?: number | null
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          ai_summary?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          followers?: number | null
+          following?: number | null
+          github_username?: string
+          id?: string
+          location?: string | null
+          name?: string | null
+          public_repos?: number | null
+          top_languages?: Json | null
+          top_repos?: Json | null
+          total_stars?: number | null
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_view_count: { Args: { p_username: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never
