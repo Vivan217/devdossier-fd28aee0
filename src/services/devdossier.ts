@@ -3,6 +3,13 @@ import type { Tables } from "@/integrations/supabase/types";
 
 export type Profile = Tables<"profiles">;
 
+export interface QuotaStatus {
+  plan: "free" | "pro";
+  used_today: number;
+  daily_limit: number; // -1 means unlimited
+  remaining: number; // Infinity for pro
+}
+
 export interface TopRepo {
   name: string;
   description: string | null;
@@ -55,4 +62,23 @@ export async function incrementViews(username: string): Promise<number | null> {
     return null;
   }
   return data;
+}
+
+export async function getQuotaStatus(userId: string): Promise<QuotaStatus | null> {
+  const { data, error } = await supabase.rpc("get_quota_status", { p_user_id: userId });
+  if (error) {
+    console.error("quota status error", error);
+    return null;
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  const plan = row.plan as "free" | "pro";
+  const used = row.used_today as number;
+  const limit = row.daily_limit as number;
+  return {
+    plan,
+    used_today: used,
+    daily_limit: limit,
+    remaining: limit < 0 ? Infinity : Math.max(0, limit - used),
+  };
 }

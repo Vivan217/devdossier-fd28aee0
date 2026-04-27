@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      generation_log: {
+        Row: {
+          created_at: string
+          github_username: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          github_username: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          github_username?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ai_summary: string | null
@@ -71,15 +92,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_accounts: {
+        Row: {
+          created_at: string
+          plan: Database["public"]["Enums"]["plan_tier"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      can_generate: { Args: { p_user_id: string }; Returns: boolean }
+      get_quota_status: {
+        Args: { p_user_id: string }
+        Returns: {
+          daily_limit: number
+          plan: Database["public"]["Enums"]["plan_tier"]
+          used_today: number
+        }[]
+      }
       increment_view_count: { Args: { p_username: string }; Returns: number }
     }
     Enums: {
-      [_ in never]: never
+      plan_tier: "free" | "pro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -206,6 +257,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      plan_tier: ["free", "pro"],
+    },
   },
 } as const
