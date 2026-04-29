@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Check, Loader2, Zap } from "lucide-react";
 import {
   Dialog,
@@ -10,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Period = "monthly" | "annual";
 
@@ -57,6 +59,8 @@ export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogP
   const [period, setPeriod] = useState<Period>("annual");
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const navigate = useNavigate();
+  const { refreshQuota } = useAuth();
 
   useEffect(() => {
     if (open) loadRazorpayScript();
@@ -109,7 +113,9 @@ export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogP
               description: "Unlimited generations are now unlocked.",
             });
             onOpenChange(false);
+            await refreshQuota();
             onUpgraded?.();
+            navigate("/success");
           } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Verification failed";
             toast.error("Payment verification failed", {
