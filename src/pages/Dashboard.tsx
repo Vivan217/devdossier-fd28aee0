@@ -1,16 +1,31 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Eye, Loader2, Star } from "lucide-react";
+import { ArrowRight, Eye, Loader2, Star, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Navbar } from "@/components/devdossier/Navbar";
 import { Footer } from "@/components/devdossier/Footer";
-import { listProfiles, type Profile } from "@/services/devdossier";
+import { UpgradeDialog } from "@/components/devdossier/UpgradeDialog";
+import {
+  getQuotaStatus,
+  listProfiles,
+  type Profile,
+  type QuotaStatus,
+} from "@/services/devdossier";
 import { formatNumber } from "@/utils/format";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [quota, setQuota] = useState<QuotaStatus | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+
+  const refreshQuota = useCallback(async () => {
+    if (!user) return;
+    setQuota(await getQuotaStatus(user.id));
+  }, [user]);
 
   useEffect(() => {
     (async () => {
@@ -22,7 +37,12 @@ const Dashboard = () => {
     })();
   }, []);
 
+  useEffect(() => {
+    refreshQuota();
+  }, [refreshQuota]);
+
   const totalViews = profiles.reduce((s, p) => s + (p.view_count || 0), 0);
+  const isPro = quota?.plan === "pro";
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -35,11 +55,23 @@ const Dashboard = () => {
               Every profile generated on DevDossier, ranked by recency.
             </p>
           </div>
-          <Link to="/generate">
-            <Button size="lg" className="bg-gradient-primary text-primary-foreground shadow-glow">
-              Generate new <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            {quota && !isPro && (
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setUpgradeOpen(true)}
+                className="border-primary/40 text-primary hover:bg-primary/10"
+              >
+                <Zap className="mr-1 h-4 w-4" /> Upgrade to Pro
+              </Button>
+            )}
+            <Link to="/generate">
+              <Button size="lg" className="bg-gradient-primary text-primary-foreground shadow-glow">
+                Generate new <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}
@@ -122,6 +154,11 @@ const Dashboard = () => {
         )}
       </main>
       <Footer />
+      <UpgradeDialog
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        onUpgraded={refreshQuota}
+      />
     </div>
   );
 };
