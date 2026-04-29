@@ -56,6 +56,7 @@ function loadRazorpayScript(): Promise<boolean> {
 export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogProps) {
   const [period, setPeriod] = useState<Period>("annual");
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
     if (open) loadRazorpayScript();
@@ -92,6 +93,10 @@ export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogP
           razorpay_payment_id: string;
           razorpay_signature: string;
         }) => {
+          setVerifying(true);
+          const verifyToast = toast.loading("Processing payment…", {
+            description: "Verifying your payment securely.",
+          });
           try {
             const { data: vd, error: vErr } = await supabase.functions.invoke(
               "razorpay-verify-payment",
@@ -100,13 +105,19 @@ export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogP
             if (vErr) throw new Error(vErr.message);
             if (vd?.error) throw new Error(vd.error);
             toast.success("Welcome to Pro 🎉", {
+              id: verifyToast,
               description: "Unlimited generations are now unlocked.",
             });
             onOpenChange(false);
             onUpgraded?.();
           } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Verification failed";
-            toast.error("Payment verification failed", { description: msg });
+            toast.error("Payment verification failed", {
+              id: verifyToast,
+              description: msg,
+            });
+          } finally {
+            setVerifying(false);
           }
         },
         modal: {
@@ -176,11 +187,15 @@ export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogP
 
         <Button
           onClick={startCheckout}
-          disabled={loading}
+          disabled={loading || verifying}
           size="lg"
           className="mt-4 bg-gradient-primary text-primary-foreground shadow-glow"
         >
-          {loading ? (
+          {verifying ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing payment…
+            </>
+          ) : loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Opening checkout…
             </>
