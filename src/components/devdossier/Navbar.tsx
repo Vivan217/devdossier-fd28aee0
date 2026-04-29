@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Github, LogOut } from "lucide-react";
+import { Github, LogOut, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/sonner";
@@ -7,7 +7,7 @@ import { toast } from "@/components/ui/sonner";
 export function Navbar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, isPro } = useAuth();
 
   const link = (to: string, label: string) => {
     const active = pathname === to;
@@ -50,6 +50,11 @@ export function Navbar() {
             <>
               {user ? (
                 <div className="flex items-center gap-2 sm:gap-3 sm:pl-4 sm:border-l sm:border-border/40">
+                  {isPro && (
+                    <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                      <Zap className="h-3 w-3" /> Pro
+                    </span>
+                  )}
                   <span className="hidden md:inline text-xs text-muted-foreground max-w-[180px] truncate">
                     {user.email}
                   </span>

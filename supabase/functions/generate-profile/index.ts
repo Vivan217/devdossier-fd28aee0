@@ -73,6 +73,13 @@ serve(async (req) => {
       );
     }
 
+    // ---- Determine effective plan (Pro-only AI narrative) ----
+    const { data: quotaRows } = await supabase.rpc("get_quota_status", {
+      p_user_id: userId,
+    });
+    const quotaRow = Array.isArray(quotaRows) ? quotaRows[0] : quotaRows;
+    const isPro = quotaRow?.plan === "pro";
+
     const { username } = await req.json();
     if (!username || typeof username !== "string" || !/^[a-zA-Z0-9-]{1,39}$/.test(username)) {
       return new Response(
@@ -137,7 +144,7 @@ serve(async (req) => {
     // 3) AI summary via Lovable AI
     let aiSummary = "";
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (LOVABLE_API_KEY) {
+    if (isPro && LOVABLE_API_KEY) {
       const prompt = `Write a 2-3 sentence professional developer narrative for a recruiter, in confident but humble tone. No emojis. No headings. Plain prose.
 
 Developer: ${user.name || cleanUser} (@${cleanUser})
