@@ -7,6 +7,7 @@ import { toast } from "@/components/ui/sonner";
 import { Navbar } from "@/components/devdossier/Navbar";
 import { Footer } from "@/components/devdossier/Footer";
 import { ProfileCard } from "@/components/devdossier/ProfileCard";
+import { UpgradeDialog } from "@/components/devdossier/UpgradeDialog";
 import {
   generateProfile,
   getQuotaStatus,
@@ -23,6 +24,7 @@ const Generate = () => {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [quota, setQuota] = useState<QuotaStatus | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   const refreshQuota = useCallback(async () => {
     if (!user) return;
@@ -122,6 +124,19 @@ const Generate = () => {
             </div>
           )}
 
+          {!isPro && quota && (
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setUpgradeOpen(true)}
+                className="border-primary/40 text-primary hover:bg-primary/10"
+              >
+                <Zap className="mr-1 h-3.5 w-3.5" /> Upgrade to Pro
+              </Button>
+            </div>
+          )}
+
           <form onSubmit={submit} className="mt-8">
             <div className="flex flex-col sm:flex-row gap-3 p-2 rounded-2xl border border-border bg-card/60 backdrop-blur-xl shadow-card">
               <div className="flex-1 flex items-center gap-2 px-4">
@@ -183,6 +198,11 @@ const Generate = () => {
         </div>
       </main>
       <Footer />
+      <UpgradeDialog
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        onUpgraded={refreshQuota}
+      />
     </div>
   );
 };
