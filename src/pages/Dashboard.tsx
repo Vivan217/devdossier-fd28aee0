@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Eye, Loader2, Star, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,25 +7,17 @@ import { Navbar } from "@/components/devdossier/Navbar";
 import { Footer } from "@/components/devdossier/Footer";
 import { UpgradeDialog } from "@/components/devdossier/UpgradeDialog";
 import {
-  getQuotaStatus,
   listProfiles,
   type Profile,
-  type QuotaStatus,
 } from "@/services/devdossier";
 import { formatNumber } from "@/utils/format";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { quota, isPro, refreshQuota } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [quota, setQuota] = useState<QuotaStatus | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-
-  const refreshQuota = useCallback(async () => {
-    if (!user) return;
-    setQuota(await getQuotaStatus(user.id));
-  }, [user]);
 
   useEffect(() => {
     (async () => {
@@ -37,12 +29,7 @@ const Dashboard = () => {
     })();
   }, []);
 
-  useEffect(() => {
-    refreshQuota();
-  }, [refreshQuota]);
-
   const totalViews = profiles.reduce((s, p) => s + (p.view_count || 0), 0);
-  const isPro = quota?.plan === "pro";
 
   return (
     <div className="min-h-screen flex flex-col">

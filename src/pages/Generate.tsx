@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, Github, Loader2, Share2, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,31 +10,18 @@ import { ProfileCard } from "@/components/devdossier/ProfileCard";
 import { UpgradeDialog } from "@/components/devdossier/UpgradeDialog";
 import {
   generateProfile,
-  getQuotaStatus,
   type Profile,
-  type QuotaStatus,
 } from "@/services/devdossier";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Generate = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, quota, isPro, refreshQuota } = useAuth();
   const [params, setParams] = useSearchParams();
   const initial = params.get("u") ?? "";
   const [username, setUsername] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [quota, setQuota] = useState<QuotaStatus | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-
-  const refreshQuota = useCallback(async () => {
-    if (!user) return;
-    const q = await getQuotaStatus(user.id);
-    setQuota(q);
-  }, [user]);
-
-  useEffect(() => {
-    refreshQuota();
-  }, [refreshQuota]);
 
   const run = async (name: string) => {
     const clean = name.trim().replace(/^@/, "");
@@ -91,7 +78,6 @@ const Generate = () => {
     return <Navigate to="/login" replace state={{ from: "/generate" }} />;
   }
 
-  const isPro = quota?.plan === "pro";
   const remaining = quota?.remaining ?? 0;
 
   return (
