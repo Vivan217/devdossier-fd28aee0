@@ -35,6 +35,48 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          plan_period: string
+          razorpay_order_id: string
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          plan_period: string
+          razorpay_order_id: string
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          plan_period?: string
+          razorpay_order_id?: string
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ai_summary: string | null
@@ -94,20 +136,26 @@ export type Database = {
       }
       user_accounts: {
         Row: {
+          billing_period: string | null
           created_at: string
           plan: Database["public"]["Enums"]["plan_tier"]
+          pro_until: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          billing_period?: string | null
           created_at?: string
           plan?: Database["public"]["Enums"]["plan_tier"]
+          pro_until?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          billing_period?: string | null
           created_at?: string
           plan?: Database["public"]["Enums"]["plan_tier"]
+          pro_until?: string | null
           updated_at?: string
           user_id?: string
         }
