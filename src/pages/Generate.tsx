@@ -167,7 +167,12 @@ const Generate = () => {
 
           {profile && !loading && (
             <>
-              <ProfileCard profile={profile} showViews={false} />
+              <ProfileCard
+                profile={profile}
+                showViews={false}
+                isPro={isPro}
+                onUpgrade={() => setUpgradeOpen(true)}
+              />
               <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                 <Button onClick={copyShare} variant="outline" size="lg">
                   <Share2 className="mr-2 h-4 w-4" /> Copy share link
