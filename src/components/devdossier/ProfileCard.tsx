@@ -1,16 +1,24 @@
 import { Link } from "react-router-dom";
-import { Eye, GitFork, MapPin, Star, Users, ExternalLink, Sparkles } from "lucide-react";
+import { Eye, GitFork, MapPin, Star, Users, ExternalLink, Sparkles, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatNumber, langColor } from "@/utils/format";
 import type { Profile, TopRepo, TopLanguage } from "@/services/devdossier";
 
 interface Props {
   profile: Profile;
   showViews?: boolean;
+  onUpgrade?: () => void;
+  isPro?: boolean;
 }
 
-export function ProfileCard({ profile, showViews = true }: Props) {
+export function ProfileCard({ profile, showViews = true, onUpgrade, isPro = true }: Props) {
   const repos = (profile.top_repos as unknown as TopRepo[]) || [];
   const langs = (profile.top_languages as unknown as TopLanguage[]) || [];
 
@@ -80,6 +88,31 @@ export function ProfileCard({ profile, showViews = true }: Props) {
           </div>
           <p className="mt-2 text-foreground leading-relaxed">{profile.ai_summary}</p>
         </div>
+      )}
+      {!profile.ai_summary && !isPro && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={onUpgrade}
+                className="relative mt-8 w-full text-left rounded-xl border border-dashed border-primary/30 bg-primary/5 p-5 hover:border-primary/60 hover:bg-primary/10 transition-all group"
+              >
+                <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary font-semibold">
+                  <Lock className="h-3.5 w-3.5" /> AI Narrative · Pro
+                </div>
+                <p className="mt-2 text-muted-foreground leading-relaxed">
+                  Unlock an AI-written, recruiter-friendly narrative that summarizes this
+                  developer's GitHub story in 2–3 polished sentences.
+                </p>
+                <span className="mt-3 inline-flex items-center gap-1 text-xs text-primary group-hover:underline">
+                  Get Pro to enable →
+                </span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>AI narratives are a Pro feature</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
 
       {/* Languages */}
