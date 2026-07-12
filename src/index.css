@@ -137,7 +137,12 @@ All colors MUST be HSL.
   }
   .shadow-elevated {
     box-shadow: var(--shadow-elevated);
-  }
+}
+
+/* Hide the Lovable badge globally */
+#lovable-badge {
+  display: none !important;
+}
   .glass {
     @apply bg-card/60 backdrop-blur-xl border border-border/60;
   }
