@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { ArrowRight, Github, Sparkles, Share2, BarChart3 } from "lucide-react";
+import { ArrowRight, Github, Sparkles, Share2, BarChart3, GitCompare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Navbar } from "@/components/devdossier/Navbar";
@@ -76,6 +76,17 @@ const Index = () => {
                 ))}
               </p>
             </form>
+
+            <div className="mt-6 flex items-center justify-center gap-3 text-sm animate-fade-in-up [animation-delay:320ms]">
+              <span className="text-muted-foreground">or</span>
+              <Link
+                to="/compare"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/60 backdrop-blur-xl px-4 py-1.5 text-foreground hover:border-primary/50 hover:text-primary transition-colors"
+              >
+                <GitCompare className="h-3.5 w-3.5" />
+                Compare two developers
+              </Link>
+            </div>
           </div>
         </section>
 
