@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Share2 } from "lucide-react";
+import { ArrowLeft, Download, Loader2, Lock, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { Navbar } from "@/components/devdossier/Navbar";
 import { Footer } from "@/components/devdossier/Footer";
 import { ProfileCard } from "@/components/devdossier/ProfileCard";
 import { getProfile, incrementViews, type Profile } from "@/services/devdossier";
+import { generateResumePdf } from "@/utils/resumePdf";
+import { useAuth } from "@/contexts/AuthContext";
+import { UpgradeDialog } from "@/components/devdossier/UpgradeDialog";
 
 const PublicProfile = () => {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const { isPro } = useAuth();
 
   useEffect(() => {
     if (!username) return;
@@ -43,6 +49,26 @@ const PublicProfile = () => {
   const copyShare = async () => {
     await navigator.clipboard.writeText(window.location.href);
     toast.success("Link copied");
+  };
+
+  const downloadPdf = async () => {
+    if (!profile) return;
+    if (!isPro) {
+      setUpgradeOpen(true);
+      return;
+    }
+    setDownloading(true);
+    try {
+      const publicUrl = `${window.location.origin}/profile/${profile.github_username}`;
+      await generateResumePdf(profile, publicUrl);
+      toast.success("Resume downloaded");
+    } catch (e) {
+      toast.error("Could not generate PDF", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -84,12 +110,28 @@ const PublicProfile = () => {
                 <Button onClick={copyShare} variant="outline" size="lg">
                   <Share2 className="mr-2 h-4 w-4" /> Copy share link
                 </Button>
+                <Button
+                  onClick={downloadPdf}
+                  variant="outline"
+                  size="lg"
+                  disabled={downloading}
+                >
+                  {downloading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : isPro ? (
+                    <Download className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Lock className="mr-2 h-4 w-4" />
+                  )}
+                  {downloading ? "Generating…" : isPro ? "Download PDF resume" : "Download PDF · Pro"}
+                </Button>
                 <Link to={`/generate?u=${encodeURIComponent(profile.github_username)}`}>
                   <Button size="lg" className="bg-gradient-primary text-primary-foreground shadow-glow">
                     Refresh dossier
                   </Button>
                 </Link>
               </div>
+              <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} />
             </>
           )}
         </div>
