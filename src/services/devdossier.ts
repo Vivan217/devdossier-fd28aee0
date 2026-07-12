@@ -54,14 +54,14 @@ export async function listProfiles(): Promise<Profile[]> {
 }
 
 export async function incrementViews(username: string): Promise<number | null> {
-  const { data, error } = await supabase.rpc("increment_view_count", {
-    p_username: username,
+  const { data, error } = await supabase.functions.invoke("increment-views", {
+    body: { username },
   });
   if (error) {
     console.error("view counter error", error);
     return null;
   }
-  return data;
+  return (data as { view_count?: number } | null)?.view_count ?? null;
 }
 
 export async function getQuotaStatus(userId: string): Promise<QuotaStatus | null> {
