@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
 import Success from "./pages/Success.tsx";
+import Compare from "./pages/Compare.tsx";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/generate" element={<Generate />} />
             <Route path="/profile/:username" element={<PublicProfile />} />
+            <Route path="/compare" element={<Compare />} />
             <Route
               path="/success"
               element={
