@@ -87,6 +87,7 @@ export type Database = {
           following: number | null
           github_username: string
           id: string
+          is_public: boolean
           location: string | null
           name: string | null
           public_repos: number | null
@@ -105,6 +106,7 @@ export type Database = {
           following?: number | null
           github_username: string
           id?: string
+          is_public?: boolean
           location?: string | null
           name?: string | null
           public_repos?: number | null
@@ -123,6 +125,7 @@ export type Database = {
           following?: number | null
           github_username?: string
           id?: string
+          is_public?: boolean
           location?: string | null
           name?: string | null
           public_repos?: number | null
