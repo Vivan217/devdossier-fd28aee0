@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Loader2, UserPlus } from "lucide-react";
+import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,18 @@ const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const oauth = async (provider: "google" | "apple") => {
+    const result = await lovable.auth.signInWithOAuth(provider, {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      toast.error(`${provider} sign-in failed`, { description: result.error.message });
+      return;
+    }
+    if (result.redirected) return;
+    navigate("/generate", { replace: true });
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +104,19 @@ const Signup = () => {
                 )}
               </Button>
             </form>
+            <div className="mt-6 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">OR</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <div className="mt-4 space-y-2">
+              <Button type="button" variant="outline" className="w-full" onClick={() => oauth("google")}>
+                Continue with Google
+              </Button>
+              <Button type="button" variant="outline" className="w-full" onClick={() => oauth("apple")}>
+                Continue with Apple
+              </Button>
+            </div>
             <p className="mt-6 text-center text-sm text-muted-foreground">
               Already have an account?{" "}
               <Link to="/login" className="text-primary font-medium hover:underline">
