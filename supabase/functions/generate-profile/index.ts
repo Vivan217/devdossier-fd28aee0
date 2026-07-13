@@ -66,8 +66,8 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // ---- Quota check ----
-    const { data: canGen, error: canGenErr } = await supabase.rpc("can_generate", {
+    // ---- Quota check ---- (must use user-scoped client; RPC checks auth.uid())
+    const { data: canGen, error: canGenErr } = await supabaseAuth.rpc("can_generate", {
       p_user_id: userId,
     });
     if (canGenErr) {
@@ -87,7 +87,7 @@ serve(async (req) => {
     }
 
     // ---- Determine effective plan (Pro-only AI narrative) ----
-    const { data: quotaRows } = await supabase.rpc("get_quota_status", {
+    const { data: quotaRows } = await supabaseAuth.rpc("get_quota_status", {
       p_user_id: userId,
     });
     const quotaRow = Array.isArray(quotaRows) ? quotaRows[0] : quotaRows;
