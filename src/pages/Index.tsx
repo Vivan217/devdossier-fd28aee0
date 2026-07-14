@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Navbar } from "@/components/devdossier/Navbar";
 import { Footer } from "@/components/devdossier/Footer";
+import { Seo } from "@/components/devdossier/Seo";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -19,6 +20,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Seo
+        title="DevDossier — Your GitHub story, told beautifully"
+        description="Turn any GitHub username into a recruiter-friendly developer story with AI — clean, shareable profiles in seconds."
+        path="/"
+      />
       <Navbar />
       <main className="flex-1">
         {/* Hero */}
@@ -50,6 +56,7 @@ const Index = () => {
                     value={u}
                     onChange={(e) => setU(e.target.value)}
                     placeholder="Enter GitHub username e.g. torvalds"
+                    aria-label="GitHub username"
                     className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-11 text-base"
                   />
                 </div>

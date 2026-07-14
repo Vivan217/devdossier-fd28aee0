@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "@/components/ui/sonner";
 import { Navbar } from "@/components/devdossier/Navbar";
+import { Seo } from "@/components/devdossier/Seo";
 import { Footer } from "@/components/devdossier/Footer";
 import { UpgradeDialog } from "@/components/devdossier/UpgradeDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -221,6 +222,11 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <Seo
+        title="Your Dashboard — DevDossier"
+        description="Manage your saved GitHub dossiers, track views, and refresh your recruiter-ready developer story."
+        path="/dashboard"
+      />
       {/* Ambient glow */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-40 left-1/3 h-[420px] w-[420px] rounded-full bg-primary/15 blur-[140px]" />

@@ -63,6 +63,7 @@ export function Navbar() {
                     size="sm"
                     variant="outline"
                     className="h-8"
+                    aria-label="Sign out"
                   >
                     <LogOut className="h-3.5 w-3.5 sm:mr-1.5" />
                     <span className="hidden sm:inline">Sign out</span>

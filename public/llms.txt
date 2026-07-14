@@ -1,0 +1,14 @@
+# DevDossier
+
+> DevDossier turns any GitHub username into a clean, recruiter-friendly developer profile with an AI-generated narrative.
+
+## Pages
+
+- [Home](/): What DevDossier is and how it works.
+- [Generate](/generate): Enter a GitHub username to produce a dossier.
+- [Compare](/compare): Compare two GitHub developers side by side.
+
+## Optional
+
+- [Sign in](/login): Existing user sign-in.
+- [Sign up](/signup): Create a free account.

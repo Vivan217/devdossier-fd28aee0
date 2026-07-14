@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/sonner";
 import { Navbar } from "@/components/devdossier/Navbar";
 import { Footer } from "@/components/devdossier/Footer";
+import { Seo } from "@/components/devdossier/Seo";
 import { formatNumber, langColor } from "@/utils/format";
 
 interface GhUser {
@@ -264,6 +265,11 @@ const Compare = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Seo
+        title="Compare Developers — DevDossier"
+        description="Compare two GitHub developers side by side — stars, followers, top languages, and account age."
+        path="/compare"
+      />
       <Navbar />
       <main className="flex-1 container mx-auto py-10 md:py-14">
         <div className="max-w-5xl mx-auto">
