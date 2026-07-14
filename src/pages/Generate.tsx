@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { Navbar } from "@/components/devdossier/Navbar";
 import { Footer } from "@/components/devdossier/Footer";
+import { Seo } from "@/components/devdossier/Seo";
 import { ProfileCard } from "@/components/devdossier/ProfileCard";
 import { UpgradeDialog } from "@/components/devdossier/UpgradeDialog";
 import {
@@ -83,6 +84,11 @@ const Generate = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Seo
+        title="Generate a Developer Dossier — DevDossier"
+        description="Enter any GitHub username to instantly generate an AI-written developer profile you can share with recruiters."
+        path="/generate"
+      />
       <Navbar />
       <main className="flex-1 container mx-auto py-12 md:py-16">
         <div className="max-w-2xl mx-auto text-center">
@@ -132,6 +138,7 @@ const Generate = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="GitHub username"
+                  aria-label="GitHub username"
                   disabled={loading}
                   className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-11 text-base"
                 />
