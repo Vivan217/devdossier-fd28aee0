@@ -47,8 +47,12 @@ const PublicProfile = () => {
   }, [username]);
 
   const copyShare = async () => {
-    await navigator.clipboard.writeText(window.location.href);
-    toast.success("Link copied");
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID as string;
+    const shareUrl = `https://${projectId}.supabase.co/functions/v1/profile-og?u=${encodeURIComponent(username ?? "")}`;
+    await navigator.clipboard.writeText(shareUrl);
+    toast.success("Share link copied", {
+      description: "Includes a rich social preview.",
+    });
   };
 
   const downloadPdf = async () => {
