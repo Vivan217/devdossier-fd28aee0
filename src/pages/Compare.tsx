@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/sonner";
 import { Navbar } from "@/components/devdossier/Navbar";
 import { Footer } from "@/components/devdossier/Footer";
+import { Seo } from "@/components/devdossier/Seo";
 import { formatNumber, langColor } from "@/utils/format";
 
 interface GhUser {
