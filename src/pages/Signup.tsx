@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
 import { Navbar } from "@/components/devdossier/Navbar";
 import { Footer } from "@/components/devdossier/Footer";
+import { Seo } from "@/components/devdossier/Seo";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Signup = () => {
@@ -48,6 +49,11 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Seo
+        title="Join DevDossier"
+        description="Create a free DevDossier account to build a recruiter-ready GitHub story with AI in seconds."
+        path="/signup"
+      />
       <Navbar />
       <main className="flex-1 container mx-auto py-12 md:py-16 flex items-center justify-center">
         <div className="w-full max-w-md">
