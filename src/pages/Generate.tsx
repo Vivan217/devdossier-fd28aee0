@@ -61,9 +61,10 @@ const Generate = () => {
 
   const copyShare = async () => {
     if (!profile) return;
-    const url = `${window.location.origin}/profile/${profile.github_username}`;
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID as string;
+    const url = `https://${projectId}.supabase.co/functions/v1/profile-og?u=${encodeURIComponent(profile.github_username)}`;
     await navigator.clipboard.writeText(url);
-    toast.success("Link copied", { description: url });
+    toast.success("Share link copied", { description: "Rich preview enabled." });
   };
 
   if (authLoading) {
