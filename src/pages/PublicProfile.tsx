@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { Navbar } from "@/components/devdossier/Navbar";
 import { Footer } from "@/components/devdossier/Footer";
+import { Seo } from "@/components/devdossier/Seo";
 import { ProfileCard } from "@/components/devdossier/ProfileCard";
 import { getProfile, incrementViews, type Profile } from "@/services/devdossier";
 import { generateResumePdf } from "@/utils/resumePdf";
@@ -77,6 +78,40 @@ const PublicProfile = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {profile ? (
+        <Seo
+          title={`${profile.name || profile.github_username}'s Developer Story | DevDossier`}
+          description={
+            profile.bio
+              ? `${profile.bio.slice(0, 155)}${profile.bio.length > 155 ? "…" : ""}`
+              : `Developer with ${profile.total_stars ?? 0} stars across ${profile.public_repos ?? 0} repos on GitHub.`
+          }
+          path={`/profile/${profile.github_username}`}
+          image={profile.avatar_url || `https://github.com/${profile.github_username}.png`}
+          type="profile"
+          jsonLd={[
+            {
+              "@context": "https://schema.org",
+              "@type": "ProfilePage",
+              mainEntity: {
+                "@type": "Person",
+                name: profile.name || profile.github_username,
+                alternateName: profile.github_username,
+                image: profile.avatar_url || `https://github.com/${profile.github_username}.png`,
+                description: profile.bio ?? undefined,
+                url: `https://devdossier.lovable.app/profile/${profile.github_username}`,
+                sameAs: [`https://github.com/${profile.github_username}`],
+              },
+            },
+          ]}
+        />
+      ) : (
+        <Seo
+          title={`@${username ?? ""} — DevDossier`}
+          description="Recruiter-friendly GitHub developer story powered by AI."
+          path={`/profile/${username ?? ""}`}
+        />
+      )}
       <Navbar />
       <main className="flex-1 container mx-auto py-10 md:py-14">
         <div className="max-w-4xl mx-auto">
