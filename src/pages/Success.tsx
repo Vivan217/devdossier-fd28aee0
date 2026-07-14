@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Navbar } from "@/components/devdossier/Navbar";
 import { Footer } from "@/components/devdossier/Footer";
+import { Seo } from "@/components/devdossier/Seo";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Success = () => {
@@ -19,6 +20,11 @@ const Success = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Seo
+        title="Welcome to Pro — DevDossier"
+        description="Your DevDossier Pro upgrade is confirmed — unlimited dossiers and AI narratives unlocked."
+        path="/success"
+      />
       <Navbar />
       <main className="flex-1 container mx-auto py-16 flex items-center justify-center">
         <Card className="max-w-lg w-full bg-gradient-card glass p-10 text-center shadow-elevated animate-scale-in">
