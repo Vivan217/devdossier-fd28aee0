@@ -89,7 +89,11 @@ export async function setProfileTheme(
   username: string,
   theme: ProfileTheme,
 ): Promise<ProfileTheme> {
-  const { data, error } = await supabase.rpc("set_profile_theme", {
+  // Types will be regenerated after the migration; cast to keep TS happy meanwhile.
+  const client = supabase as unknown as {
+    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+  };
+  const { data, error } = await client.rpc("set_profile_theme", {
     p_username: username,
     p_theme: theme,
   });
