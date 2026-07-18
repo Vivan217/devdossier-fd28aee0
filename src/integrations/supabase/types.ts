@@ -91,6 +91,7 @@ export type Database = {
           location: string | null
           name: string | null
           public_repos: number | null
+          theme: string
           top_languages: Json | null
           top_repos: Json | null
           total_stars: number | null
@@ -110,6 +111,7 @@ export type Database = {
           location?: string | null
           name?: string | null
           public_repos?: number | null
+          theme?: string
           top_languages?: Json | null
           top_repos?: Json | null
           total_stars?: number | null
@@ -129,6 +131,7 @@ export type Database = {
           location?: string | null
           name?: string | null
           public_repos?: number | null
+          theme?: string
           top_languages?: Json | null
           top_repos?: Json | null
           total_stars?: number | null
@@ -188,6 +191,10 @@ export type Database = {
         }[]
       }
       increment_view_count: { Args: { p_username: string }; Returns: number }
+      set_profile_theme: {
+        Args: { p_theme: string; p_username: string }
+        Returns: string
+      }
     }
     Enums: {
       plan_tier: "free" | "pro"
