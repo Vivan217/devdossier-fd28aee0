@@ -7,7 +7,14 @@ import { Navbar } from "@/components/devdossier/Navbar";
 import { Footer } from "@/components/devdossier/Footer";
 import { Seo } from "@/components/devdossier/Seo";
 import { ProfileCard } from "@/components/devdossier/ProfileCard";
-import { getProfile, incrementViews, type Profile } from "@/services/devdossier";
+import {
+  getProfile,
+  incrementViews,
+  setProfileTheme,
+  userOwnsProfile,
+  type Profile,
+  type ProfileTheme,
+} from "@/services/devdossier";
 import { generateResumePdf } from "@/utils/resumePdf";
 import { useAuth } from "@/contexts/AuthContext";
 import { UpgradeDialog } from "@/components/devdossier/UpgradeDialog";
@@ -19,7 +26,9 @@ const PublicProfile = () => {
   const [notFound, setNotFound] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const { isPro } = useAuth();
+  const [theme, setTheme] = useState<ProfileTheme>("default");
+  const [isOwner, setIsOwner] = useState(false);
+  const { isPro, user } = useAuth();
 
   useEffect(() => {
     if (!username) return;
@@ -35,6 +44,7 @@ const PublicProfile = () => {
           // bump view count and reflect locally
           const newCount = await incrementViews(username);
           setProfile({ ...p, view_count: newCount ?? p.view_count + 1 });
+          setTheme(((p as unknown as { theme?: ProfileTheme }).theme) ?? "default");
           // SEO title
           document.title = `${p.name || p.github_username} — DevDossier`;
         }
@@ -46,6 +56,34 @@ const PublicProfile = () => {
       cancelled = true;
     };
   }, [username]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!user || !username) {
+      setIsOwner(false);
+      return;
+    }
+    userOwnsProfile(user.id, username).then((v) => {
+      if (!cancelled) setIsOwner(v);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, username]);
+
+  const handleThemeChange = async (t: ProfileTheme) => {
+    if (!profile) return;
+    const prev = theme;
+    setTheme(t);
+    try {
+      await setProfileTheme(profile.github_username, t);
+      toast.success("Theme updated");
+    } catch (e) {
+      setTheme(prev);
+      const msg = e instanceof Error ? e.message : "Could not change theme";
+      toast.error("Theme change failed", { description: msg });
+    }
+  };
 
   const copyShare = async () => {
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID as string;
@@ -144,7 +182,14 @@ const PublicProfile = () => {
 
           {!loading && profile && (
             <>
-              <ProfileCard profile={profile} />
+              <ProfileCard
+                profile={profile}
+                isPro={isPro}
+                theme={theme}
+                canEditTheme={isOwner}
+                onThemeChange={handleThemeChange}
+                onUpgrade={() => setUpgradeOpen(true)}
+              />
               <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                 <Button onClick={copyShare} variant="outline" size="lg">
                   <Share2 className="mr-2 h-4 w-4" /> Copy share link
