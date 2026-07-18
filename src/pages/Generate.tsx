@@ -12,6 +12,8 @@ import { UpgradeDialog } from "@/components/devdossier/UpgradeDialog";
 import {
   generateProfile,
   type Profile,
+  type ProfileTheme,
+  setProfileTheme,
 } from "@/services/devdossier";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -23,6 +25,7 @@ const Generate = () => {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [theme, setTheme] = useState<ProfileTheme>("default");
 
   const run = async (name: string) => {
     const clean = name.trim().replace(/^@/, "");
@@ -38,6 +41,7 @@ const Generate = () => {
     try {
       const p = await generateProfile(clean);
       setProfile(p);
+      setTheme(((p as unknown as { theme?: ProfileTheme }).theme) ?? "default");
       setParams({ u: clean }, { replace: true });
       toast.success("Profile generated", { description: `@${clean} is ready to share.` });
       refreshQuota();
@@ -47,6 +51,20 @@ const Generate = () => {
       refreshQuota();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleThemeChange = async (t: ProfileTheme) => {
+    if (!profile) return;
+    const prev = theme;
+    setTheme(t);
+    try {
+      await setProfileTheme(profile.github_username, t);
+      toast.success("Theme updated");
+    } catch (e) {
+      setTheme(prev);
+      const msg = e instanceof Error ? e.message : "Could not change theme";
+      toast.error("Theme change failed", { description: msg });
     }
   };
 
@@ -180,6 +198,9 @@ const Generate = () => {
                 showViews={false}
                 isPro={isPro}
                 onUpgrade={() => setUpgradeOpen(true)}
+                theme={theme}
+                canEditTheme
+                onThemeChange={handleThemeChange}
               />
               <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                 <Button onClick={copyShare} variant="outline" size="lg">
