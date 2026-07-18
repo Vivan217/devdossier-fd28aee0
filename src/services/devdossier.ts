@@ -82,3 +82,36 @@ export async function getQuotaStatus(userId: string): Promise<QuotaStatus | null
     remaining: limit < 0 ? Infinity : Math.max(0, limit - used),
   };
 }
+
+export type ProfileTheme = "default" | "aurora" | "terminal" | "minimal";
+
+export async function setProfileTheme(
+  username: string,
+  theme: ProfileTheme,
+): Promise<ProfileTheme> {
+  // Types will be regenerated after the migration; cast to keep TS happy meanwhile.
+  const client = supabase as unknown as {
+    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+  };
+  const { data, error } = await client.rpc("set_profile_theme", {
+    p_username: username,
+    p_theme: theme,
+  });
+  if (error) throw new Error(error.message);
+  return (data as ProfileTheme) ?? theme;
+}
+
+export async function userOwnsProfile(
+  userId: string,
+  username: string,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("generation_log")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("github_username", username)
+    .limit(1)
+    .maybeSingle();
+  if (error) return false;
+  return !!data;
+}

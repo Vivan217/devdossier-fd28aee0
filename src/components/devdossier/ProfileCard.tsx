@@ -9,32 +9,60 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { formatNumber, langColor } from "@/utils/format";
-import type { Profile, TopRepo, TopLanguage } from "@/services/devdossier";
+import type { Profile, ProfileTheme, TopRepo, TopLanguage } from "@/services/devdossier";
+import { ThemeSwitcher } from "@/components/devdossier/ThemeSwitcher";
 
 interface Props {
   profile: Profile;
   showViews?: boolean;
   onUpgrade?: () => void;
   isPro?: boolean;
+  theme?: ProfileTheme;
+  canEditTheme?: boolean;
+  onThemeChange?: (t: ProfileTheme) => void;
 }
 
-export function ProfileCard({ profile, showViews = true, onUpgrade, isPro = true }: Props) {
+export function ProfileCard({
+  profile,
+  showViews = true,
+  onUpgrade,
+  isPro = true,
+  theme,
+  canEditTheme = false,
+  onThemeChange,
+}: Props) {
   const repos = (profile.top_repos as unknown as TopRepo[]) || [];
   const langs = (profile.top_languages as unknown as TopLanguage[]) || [];
+  const activeTheme: ProfileTheme =
+    (theme ?? ((profile as unknown as { theme?: ProfileTheme }).theme) ?? "default");
 
   return (
-    <Card className="relative overflow-hidden bg-gradient-card glass shadow-elevated p-8 md:p-10 animate-scale-in">
+    <Card
+      data-dd-theme={activeTheme}
+      className="relative overflow-hidden bg-gradient-card glass shadow-elevated p-8 md:p-10 animate-scale-in"
+    >
       {/* glow */}
-      <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
+      <div className="dd-glow-blob pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
+
+      {canEditTheme && onThemeChange && (
+        <div className="absolute top-4 right-4 z-10">
+          <ThemeSwitcher
+            value={activeTheme}
+            isPro={isPro}
+            onChange={onThemeChange}
+            onLockedClick={onUpgrade}
+          />
+        </div>
+      )}
 
       {/* Header */}
       <div className="relative flex flex-col md:flex-row gap-6 items-start">
         <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-gradient-primary blur-md opacity-60" />
+          <div className="dd-avatar-glow absolute inset-0 rounded-full bg-gradient-primary blur-md opacity-60" />
           <img
             src={profile.avatar_url ?? ""}
             alt={`${profile.github_username} avatar`}
-            className="relative h-24 w-24 md:h-28 md:w-28 rounded-full border-2 border-primary/40 object-cover"
+            className="dd-avatar relative h-24 w-24 md:h-28 md:w-28 rounded-full border-2 border-primary/40 object-cover"
             loading="lazy"
           />
         </div>
@@ -47,7 +75,7 @@ export function ProfileCard({ profile, showViews = true, onUpgrade, isPro = true
               href={`https://github.com/${profile.github_username}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
+              className="dd-muted inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               @{profile.github_username}
               <ExternalLink className="h-3 w-3" />
@@ -56,7 +84,7 @@ export function ProfileCard({ profile, showViews = true, onUpgrade, isPro = true
           {profile.bio && (
             <p className="mt-2 text-muted-foreground leading-relaxed">{profile.bio}</p>
           )}
-          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+          <div className="dd-muted mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
             {profile.location && (
               <span className="inline-flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5" /> {profile.location}
@@ -82,8 +110,8 @@ export function ProfileCard({ profile, showViews = true, onUpgrade, isPro = true
 
       {/* AI summary */}
       {profile.ai_summary && (
-        <div className="relative mt-8 rounded-xl border border-primary/20 bg-primary/5 p-5">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary font-semibold">
+        <div className="dd-ai relative mt-8 rounded-xl border border-primary/20 bg-primary/5 p-5">
+          <div className="dd-ai-label flex items-center gap-2 text-xs uppercase tracking-wider text-primary font-semibold">
             <Sparkles className="h-3.5 w-3.5" /> AI Narrative
           </div>
           <p className="mt-2 text-foreground leading-relaxed">{profile.ai_summary}</p>
@@ -118,7 +146,7 @@ export function ProfileCard({ profile, showViews = true, onUpgrade, isPro = true
       {/* Languages */}
       {langs.length > 0 && (
         <div className="relative mt-8">
-          <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">
+          <h3 className="dd-muted text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">
             Top Languages
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -126,14 +154,14 @@ export function ProfileCard({ profile, showViews = true, onUpgrade, isPro = true
               <Badge
                 key={l.name}
                 variant="outline"
-                className="gap-1.5 border-border bg-card-elevated text-foreground py-1 px-3"
+                className="dd-badge gap-1.5 border-border bg-card-elevated text-foreground py-1 px-3"
               >
                 <span
                   className="h-2 w-2 rounded-full"
                   style={{ backgroundColor: langColor(l.name) }}
                 />
                 {l.name}
-                <span className="text-muted-foreground text-xs">{l.count}</span>
+                <span className="dd-muted text-muted-foreground text-xs">{l.count}</span>
               </Badge>
             ))}
           </div>
@@ -143,7 +171,7 @@ export function ProfileCard({ profile, showViews = true, onUpgrade, isPro = true
       {/* Top repos */}
       {repos.length > 0 && (
         <div className="relative mt-8">
-          <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">
+          <h3 className="dd-muted text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">
             Notable Projects
           </h3>
           <div className="grid gap-3 md:grid-cols-3">
@@ -153,20 +181,20 @@ export function ProfileCard({ profile, showViews = true, onUpgrade, isPro = true
                 href={r.url}
                 target="_blank"
                 rel="noreferrer"
-                className="group rounded-xl border border-border bg-card-elevated/50 p-4 hover:border-primary/50 hover:bg-card-elevated transition-all"
+                className="dd-repo-card group rounded-xl border border-border bg-card-elevated/50 p-4 hover:border-primary/50 hover:bg-card-elevated transition-all"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                     {r.name}
                   </span>
-                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <ExternalLink className="dd-muted h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 </div>
                 {r.description && (
-                  <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                  <p className="dd-muted mt-1.5 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                     {r.description}
                   </p>
                 )}
-                <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="dd-muted mt-3 flex items-center gap-3 text-xs text-muted-foreground">
                   {r.language && (
                     <span className="inline-flex items-center gap-1">
                       <span
@@ -190,7 +218,7 @@ export function ProfileCard({ profile, showViews = true, onUpgrade, isPro = true
       )}
 
       {showViews && (
-        <div className="relative mt-8 pt-6 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="dd-muted relative mt-8 pt-6 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
           <span>
             Share: <Link to={`/profile/${profile.github_username}`} className="text-primary hover:underline">/profile/{profile.github_username}</Link>
           </span>

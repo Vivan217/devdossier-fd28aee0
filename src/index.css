@@ -147,3 +147,129 @@ All colors MUST be HSL.
     @apply bg-card/60 backdrop-blur-xl border border-border/60;
   }
 }
+
+/* =========================
+   Profile card visual themes
+   Applied via [data-dd-theme] on the card root.
+   ========================= */
+
+/* Aurora — dark base, purple/blue/pink accents */
+[data-dd-theme="aurora"] .dd-glow-blob {
+  background: linear-gradient(135deg, #a855f7, #3b82f6, #ec4899) !important;
+  opacity: 0.35;
+}
+[data-dd-theme="aurora"] .dd-avatar-glow {
+  background: linear-gradient(135deg, #a855f7, #3b82f6, #ec4899) !important;
+  opacity: 0.9;
+}
+[data-dd-theme="aurora"] .dd-avatar {
+  border-color: transparent !important;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.6);
+}
+[data-dd-theme="aurora"] .dd-badge {
+  border-color: rgba(168, 85, 247, 0.5) !important;
+  background: rgba(168, 85, 247, 0.08) !important;
+}
+[data-dd-theme="aurora"] .dd-ai {
+  border-image: linear-gradient(135deg, #a855f7, #3b82f6, #ec4899) 1;
+  background: linear-gradient(135deg, rgba(168,85,247,0.08), rgba(236,72,153,0.08)) !important;
+}
+[data-dd-theme="aurora"] .dd-ai-label {
+  background: linear-gradient(135deg, #a855f7, #3b82f6, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+[data-dd-theme="aurora"] .dd-repo-card:hover {
+  border-color: rgba(168, 85, 247, 0.6) !important;
+}
+
+/* Terminal — hacker/code editor aesthetic */
+[data-dd-theme="terminal"] {
+  background: #000 !important;
+  color: #4ade80 !important;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace !important;
+  border: 1px solid #16a34a !important;
+  border-radius: 0 !important;
+  box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.2), inset 0 0 60px rgba(74, 222, 128, 0.04) !important;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(74,222,128,0.04) 0px, rgba(74,222,128,0.04) 1px, transparent 1px, transparent 3px) !important;
+}
+[data-dd-theme="terminal"] * {
+  border-radius: 0 !important;
+  font-family: inherit !important;
+}
+[data-dd-theme="terminal"] .dd-glow-blob { display: none !important; }
+[data-dd-theme="terminal"] .dd-avatar-glow { display: none !important; }
+[data-dd-theme="terminal"] .dd-avatar {
+  border: 1px solid #4ade80 !important;
+}
+[data-dd-theme="terminal"] h1,
+[data-dd-theme="terminal"] h2,
+[data-dd-theme="terminal"] h3,
+[data-dd-theme="terminal"] p,
+[data-dd-theme="terminal"] span,
+[data-dd-theme="terminal"] a {
+  color: #4ade80 !important;
+}
+[data-dd-theme="terminal"] .dd-muted { color: #86efac !important; opacity: 0.85; }
+[data-dd-theme="terminal"] .dd-badge {
+  background: #000 !important;
+  border: 1px solid #4ade80 !important;
+  color: #4ade80 !important;
+}
+[data-dd-theme="terminal"] .dd-repo-card {
+  background: #000 !important;
+  border: 1px solid #14532d !important;
+}
+[data-dd-theme="terminal"] .dd-repo-card:hover {
+  border-color: #4ade80 !important;
+  background: rgba(74, 222, 128, 0.05) !important;
+}
+[data-dd-theme="terminal"] .dd-ai {
+  background: rgba(74, 222, 128, 0.04) !important;
+  border: 1px solid #4ade80 !important;
+}
+[data-dd-theme="terminal"] .dd-ai-label { color: #4ade80 !important; }
+[data-dd-theme="terminal"] h1::before { content: "$ "; }
+
+/* Minimal Light — professional recruiter-friendly */
+[data-dd-theme="minimal"] {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+[data-dd-theme="minimal"] .dd-glow-blob { display: none !important; }
+[data-dd-theme="minimal"] .dd-avatar-glow { display: none !important; }
+[data-dd-theme="minimal"] .dd-avatar {
+  border: 1px solid #e2e8f0 !important;
+}
+[data-dd-theme="minimal"] h1,
+[data-dd-theme="minimal"] h2,
+[data-dd-theme="minimal"] h3 { color: #0f172a !important; }
+[data-dd-theme="minimal"] p { color: #334155 !important; }
+[data-dd-theme="minimal"] .dd-muted { color: #64748b !important; }
+[data-dd-theme="minimal"] .dd-badge {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+[data-dd-theme="minimal"] .dd-repo-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+[data-dd-theme="minimal"] .dd-repo-card:hover {
+  border-color: #2563eb !important;
+  background: #f8fafc !important;
+}
+[data-dd-theme="minimal"] .dd-repo-card * { color: #0f172a !important; }
+[data-dd-theme="minimal"] .dd-repo-card .dd-muted { color: #64748b !important; }
+[data-dd-theme="minimal"] .dd-ai {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+[data-dd-theme="minimal"] .dd-ai p { color: #0f172a !important; }
+[data-dd-theme="minimal"] .dd-ai-label { color: #2563eb !important; }
+[data-dd-theme="minimal"] a { color: #2563eb !important; }
