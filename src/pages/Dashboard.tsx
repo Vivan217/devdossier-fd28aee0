@@ -521,33 +521,6 @@ const Dashboard = () => {
               />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-5 pt-6">
-              <div className="space-y-2">
-                <Label htmlFor="linkedin">LinkedIn URL</Label>
-                <Input
-                  id="linkedin"
-                  placeholder="https://linkedin.com/in/your-handle"
-                  value={settings.linkedin_url}
-                  onChange={(e) =>
-                    setSettings((s) => ({ ...s, linkedin_url: e.target.value }))
-                  }
-                  className="bg-background/40 border-border/60"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="portfolio">Portfolio URL</Label>
-                <Input
-                  id="portfolio"
-                  placeholder="https://your-portfolio.com"
-                  value={settings.portfolio_url}
-                  onChange={(e) =>
-                    setSettings((s) => ({ ...s, portfolio_url: e.target.value }))
-                  }
-                  className="bg-background/40 border-border/60"
-                />
-              </div>
-            </div>
-
             <div className="mt-6 flex justify-end">
               <Button
                 onClick={saveSettings}
