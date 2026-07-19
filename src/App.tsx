@@ -14,6 +14,7 @@ import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
 import Success from "./pages/Success.tsx";
 import Compare from "./pages/Compare.tsx";
+import ReadmeGenerator from "./pages/ReadmeGenerator.tsx";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/generate" element={<Generate />} />
             <Route path="/profile/:username" element={<PublicProfile />} />
             <Route path="/compare" element={<Compare />} />
+            <Route path="/readme-generator" element={<ReadmeGenerator />} />
             <Route
               path="/success"
               element={
