@@ -48,8 +48,6 @@ interface DossierRow {
 
 interface AccountSettings {
   is_public: boolean;
-  linkedin_url: string;
-  portfolio_url: string;
   pro_until: string | null;
   billing_period: string | null;
 }
@@ -62,8 +60,6 @@ const Dashboard = () => {
   const [regenerating, setRegenerating] = useState<string | null>(null);
   const [settings, setSettings] = useState<AccountSettings>({
     is_public: true,
-    linkedin_url: "",
-    portfolio_url: "",
     pro_until: null,
     billing_period: null,
   });
@@ -125,8 +121,6 @@ const Dashboard = () => {
       const d = data as unknown as Record<string, unknown>;
       setSettings({
         is_public: (d.is_public as boolean | null) ?? true,
-        linkedin_url: (d.linkedin_url as string | null) ?? "",
-        portfolio_url: (d.portfolio_url as string | null) ?? "",
         pro_until: (d.pro_until as string | null) ?? null,
         billing_period: (d.billing_period as string | null) ?? null,
       });
@@ -200,8 +194,6 @@ const Dashboard = () => {
       .from("user_accounts")
       .update({
         is_public: settings.is_public,
-        linkedin_url: settings.linkedin_url || null,
-        portfolio_url: settings.portfolio_url || null,
       } as never)
       .eq("user_id", user.id);
     setSavingSettings(false);
