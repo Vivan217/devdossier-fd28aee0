@@ -145,9 +145,7 @@ export type Database = {
           billing_period: string | null
           created_at: string
           is_public: boolean
-          linkedin_url: string | null
           plan: Database["public"]["Enums"]["plan_tier"]
-          portfolio_url: string | null
           pro_until: string | null
           updated_at: string
           user_id: string
@@ -156,9 +154,7 @@ export type Database = {
           billing_period?: string | null
           created_at?: string
           is_public?: boolean
-          linkedin_url?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
-          portfolio_url?: string | null
           pro_until?: string | null
           updated_at?: string
           user_id: string
@@ -167,9 +163,7 @@ export type Database = {
           billing_period?: string | null
           created_at?: string
           is_public?: boolean
-          linkedin_url?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
-          portfolio_url?: string | null
           pro_until?: string | null
           updated_at?: string
           user_id?: string

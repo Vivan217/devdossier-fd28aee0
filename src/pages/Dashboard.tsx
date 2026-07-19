@@ -16,8 +16,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -48,8 +46,6 @@ interface DossierRow {
 
 interface AccountSettings {
   is_public: boolean;
-  linkedin_url: string;
-  portfolio_url: string;
   pro_until: string | null;
   billing_period: string | null;
 }
@@ -62,8 +58,6 @@ const Dashboard = () => {
   const [regenerating, setRegenerating] = useState<string | null>(null);
   const [settings, setSettings] = useState<AccountSettings>({
     is_public: true,
-    linkedin_url: "",
-    portfolio_url: "",
     pro_until: null,
     billing_period: null,
   });
@@ -125,8 +119,6 @@ const Dashboard = () => {
       const d = data as unknown as Record<string, unknown>;
       setSettings({
         is_public: (d.is_public as boolean | null) ?? true,
-        linkedin_url: (d.linkedin_url as string | null) ?? "",
-        portfolio_url: (d.portfolio_url as string | null) ?? "",
         pro_until: (d.pro_until as string | null) ?? null,
         billing_period: (d.billing_period as string | null) ?? null,
       });
@@ -200,8 +192,6 @@ const Dashboard = () => {
       .from("user_accounts")
       .update({
         is_public: settings.is_public,
-        linkedin_url: settings.linkedin_url || null,
-        portfolio_url: settings.portfolio_url || null,
       } as never)
       .eq("user_id", user.id);
     setSavingSettings(false);
@@ -527,33 +517,6 @@ const Dashboard = () => {
                   setSettings((s) => ({ ...s, is_public: v }))
                 }
               />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-5 pt-6">
-              <div className="space-y-2">
-                <Label htmlFor="linkedin">LinkedIn URL</Label>
-                <Input
-                  id="linkedin"
-                  placeholder="https://linkedin.com/in/your-handle"
-                  value={settings.linkedin_url}
-                  onChange={(e) =>
-                    setSettings((s) => ({ ...s, linkedin_url: e.target.value }))
-                  }
-                  className="bg-background/40 border-border/60"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="portfolio">Portfolio URL</Label>
-                <Input
-                  id="portfolio"
-                  placeholder="https://your-portfolio.com"
-                  value={settings.portfolio_url}
-                  onChange={(e) =>
-                    setSettings((s) => ({ ...s, portfolio_url: e.target.value }))
-                  }
-                  className="bg-background/40 border-border/60"
-                />
-              </div>
             </div>
 
             <div className="mt-6 flex justify-end">
