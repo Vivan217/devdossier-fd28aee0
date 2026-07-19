@@ -44,6 +44,7 @@ export function Navbar() {
           <div className="hidden sm:flex items-center gap-6">
             {link("/", "Home")}
             {link("/generate", "Generate")}
+            {link("/readme-generator", "README")}
             {link("/dashboard", "Dashboard")}
           </div>
           {!loading && (
