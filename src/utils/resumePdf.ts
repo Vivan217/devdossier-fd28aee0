@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import type { Profile, TopLanguage, TopRepo } from "@/services/devdossier";
+import { getFeaturedRepos, sortReposByFeatured } from "@/services/devdossier";
 
 async function loadAvatar(url: string | null): Promise<string | null> {
   if (!url) return null;
@@ -116,20 +117,37 @@ export async function generateResumePdf(profile: Profile, publicUrl: string) {
   }
 
   // Top repos
-  const repos = ((profile.top_repos as unknown as TopRepo[]) || []).slice(0, 5);
+  const allRepos = (profile.top_repos as unknown as TopRepo[]) || [];
+  const featured = getFeaturedRepos(profile);
+  const featuredMap = new Map(featured.map((f) => [f.name, f]));
+  const repos = sortReposByFeatured(allRepos, featured).slice(0, 5);
   if (repos.length) {
     section("Key Projects");
     doc.setFontSize(10.5);
     for (const r of repos) {
       if (y > 720) break; // keep single page
+      const feat = featuredMap.get(r.name);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(30, 30, 30);
-      doc.text(r.name, margin, y);
+      if (feat) {
+        doc.setTextColor(30, 111, 255);
+        doc.text(`★ ${r.name}`, margin, y);
+      } else {
+        doc.setTextColor(30, 30, 30);
+        doc.text(r.name, margin, y);
+      }
       doc.setFont("helvetica", "normal");
       doc.setTextColor(120, 120, 120);
       const meta = `${r.language ? r.language + " · " : ""}★ ${r.stars} · ⑃ ${r.forks}`;
       doc.text(meta, margin + contentW, y, { align: "right" });
       y += 13;
+      if (feat?.blurb) {
+        doc.setFont("helvetica", "italic");
+        doc.setTextColor(30, 111, 255);
+        const b = doc.splitTextToSize(feat.blurb, contentW);
+        doc.text(b, margin, y);
+        y += b.length * 12;
+        doc.setFont("helvetica", "normal");
+      }
       if (r.description) {
         doc.setTextColor(80, 80, 80);
         const d = doc.splitTextToSize(r.description, contentW);
