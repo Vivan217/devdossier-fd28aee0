@@ -123,7 +123,7 @@ const PublicProfile = () => {
     setDownloading(true);
     try {
       const publicUrl = `${window.location.origin}/profile/${profile.github_username}`;
-      await generateResumePdf({ ...profile, featured_repos: featured } as Profile, publicUrl);
+      await generateResumePdf({ ...profile, featured_repos: featured as unknown as Profile["featured_repos"] }, publicUrl);
       toast.success("Resume downloaded");
     } catch (e) {
       toast.error("Could not generate PDF", {
