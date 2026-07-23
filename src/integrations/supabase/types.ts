@@ -83,6 +83,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
+          featured_repos: Json
           followers: number | null
           following: number | null
           github_username: string
@@ -103,6 +104,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          featured_repos?: Json
           followers?: number | null
           following?: number | null
           github_username: string
@@ -123,6 +125,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          featured_repos?: Json
           followers?: number | null
           following?: number | null
           github_username?: string
