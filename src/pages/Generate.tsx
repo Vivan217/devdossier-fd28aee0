@@ -14,6 +14,9 @@ import {
   type Profile,
   type ProfileTheme,
   setProfileTheme,
+  setFeaturedRepos,
+  getFeaturedRepos,
+  type FeaturedRepo,
 } from "@/services/devdossier";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -26,6 +29,7 @@ const Generate = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [theme, setTheme] = useState<ProfileTheme>("default");
+  const [featured, setFeatured] = useState<FeaturedRepo[]>([]);
 
   const run = async (name: string) => {
     const clean = name.trim().replace(/^@/, "");
@@ -42,6 +46,7 @@ const Generate = () => {
       const p = await generateProfile(clean);
       setProfile(p);
       setTheme(((p as unknown as { theme?: ProfileTheme }).theme) ?? "default");
+      setFeatured(getFeaturedRepos(p));
       setParams({ u: clean }, { replace: true });
       toast.success("Profile generated", { description: `@${clean} is ready to share.` });
       refreshQuota();
@@ -65,6 +70,21 @@ const Generate = () => {
       setTheme(prev);
       const msg = e instanceof Error ? e.message : "Could not change theme";
       toast.error("Theme change failed", { description: msg });
+    }
+  };
+
+  const handleFeaturedChange = async (next: FeaturedRepo[]) => {
+    if (!profile) return;
+    const prev = featured;
+    setFeatured(next);
+    try {
+      const saved = await setFeaturedRepos(profile.github_username, next);
+      setFeatured(saved);
+    } catch (e) {
+      setFeatured(prev);
+      toast.error("Could not update Featured", {
+        description: e instanceof Error ? e.message : undefined,
+      });
     }
   };
 
@@ -201,6 +221,9 @@ const Generate = () => {
                 theme={theme}
                 canEditTheme
                 onThemeChange={handleThemeChange}
+                featured={featured}
+                canEditFeatured
+                onFeaturedChange={handleFeaturedChange}
               />
               <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                 <Button onClick={copyShare} variant="outline" size="lg">

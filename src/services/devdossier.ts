@@ -85,6 +85,53 @@ export async function getQuotaStatus(userId: string): Promise<QuotaStatus | null
 
 export type ProfileTheme = "default" | "aurora" | "terminal" | "minimal";
 
+export interface FeaturedRepo {
+  name: string;
+  blurb: string;
+}
+
+export const MAX_FEATURED_REPOS = 3;
+export const MAX_FEATURED_BLURB = 100;
+
+export function getFeaturedRepos(profile: Profile): FeaturedRepo[] {
+  const raw = (profile as unknown as { featured_repos?: unknown }).featured_repos;
+  if (!Array.isArray(raw)) return [];
+  const out: FeaturedRepo[] = [];
+  for (const entry of raw) {
+    if (out.length >= MAX_FEATURED_REPOS) break;
+    const e = entry as { name?: unknown; blurb?: unknown } | null;
+    if (!e || typeof e.name !== "string" || !e.name.trim()) continue;
+    out.push({
+      name: e.name,
+      blurb: typeof e.blurb === "string" ? e.blurb : "",
+    });
+  }
+  return out;
+}
+
+export function sortReposByFeatured(
+  repos: TopRepo[],
+  featured: FeaturedRepo[],
+): TopRepo[] {
+  const order = new Map(featured.map((f, i) => [f.name, i]));
+  return [...repos].sort((a, b) => {
+    const ai = order.has(a.name) ? (order.get(a.name) as number) : Infinity;
+    const bi = order.has(b.name) ? (order.get(b.name) as number) : Infinity;
+    return ai - bi;
+  });
+}
+
+export async function setFeaturedRepos(
+  username: string,
+  featured: FeaturedRepo[],
+): Promise<FeaturedRepo[]> {
+  const { data, error } = await supabase.functions.invoke("set-featured-repos", {
+    body: { username, featured },
+  });
+  if (error) throw new Error(error.message);
+  return ((data as { featured?: FeaturedRepo[] })?.featured) ?? featured;
+}
+
 export async function setProfileTheme(
   username: string,
   theme: ProfileTheme,

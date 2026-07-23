@@ -12,6 +12,9 @@ import {
   incrementViews,
   setProfileTheme,
   userOwnsProfile,
+  setFeaturedRepos,
+  getFeaturedRepos,
+  type FeaturedRepo,
   type Profile,
   type ProfileTheme,
 } from "@/services/devdossier";
@@ -28,6 +31,7 @@ const PublicProfile = () => {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [theme, setTheme] = useState<ProfileTheme>("default");
   const [isOwner, setIsOwner] = useState(false);
+  const [featured, setFeatured] = useState<FeaturedRepo[]>([]);
   const { isPro, user } = useAuth();
 
   useEffect(() => {
@@ -45,6 +49,7 @@ const PublicProfile = () => {
           const newCount = await incrementViews(username);
           setProfile({ ...p, view_count: newCount ?? p.view_count + 1 });
           setTheme(((p as unknown as { theme?: ProfileTheme }).theme) ?? "default");
+          setFeatured(getFeaturedRepos(p));
           // SEO title
           document.title = `${p.name || p.github_username} — DevDossier`;
         }
@@ -85,6 +90,21 @@ const PublicProfile = () => {
     }
   };
 
+  const handleFeaturedChange = async (next: FeaturedRepo[]) => {
+    if (!profile) return;
+    const prev = featured;
+    setFeatured(next);
+    try {
+      const saved = await setFeaturedRepos(profile.github_username, next);
+      setFeatured(saved);
+    } catch (e) {
+      setFeatured(prev);
+      toast.error("Could not update Featured", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  };
+
   const copyShare = async () => {
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID as string;
     const shareUrl = `https://${projectId}.supabase.co/functions/v1/profile-og?u=${encodeURIComponent(username ?? "")}`;
@@ -103,7 +123,7 @@ const PublicProfile = () => {
     setDownloading(true);
     try {
       const publicUrl = `${window.location.origin}/profile/${profile.github_username}`;
-      await generateResumePdf(profile, publicUrl);
+      await generateResumePdf({ ...profile, featured_repos: featured as unknown as Profile["featured_repos"] }, publicUrl);
       toast.success("Resume downloaded");
     } catch (e) {
       toast.error("Could not generate PDF", {
@@ -189,6 +209,9 @@ const PublicProfile = () => {
                 canEditTheme={isOwner}
                 onThemeChange={handleThemeChange}
                 onUpgrade={() => setUpgradeOpen(true)}
+                featured={featured}
+                canEditFeatured={isOwner}
+                onFeaturedChange={handleFeaturedChange}
               />
               <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                 <Button onClick={copyShare} variant="outline" size="lg">

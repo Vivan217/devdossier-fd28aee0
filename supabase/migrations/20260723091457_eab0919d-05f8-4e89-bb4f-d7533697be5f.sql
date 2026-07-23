@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS featured_repos jsonb NOT NULL DEFAULT '[]'::jsonb;
