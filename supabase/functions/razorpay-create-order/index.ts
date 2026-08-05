@@ -28,6 +28,12 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const authHeader = req.headers.get("Authorization");
@@ -65,9 +71,22 @@ Deno.serve(async (req) => {
     }
 
     const { amount, period } = PLANS[plan];
+    if (!Number.isInteger(amount) || amount < 100) {
+      return new Response(JSON.stringify({ error: "Amount must be at least 100 paise" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const keyId = Deno.env.get("RAZORPAY_KEY_ID")!;
-    const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET")!;
+    const keyId = Deno.env.get("RAZORPAY_KEY_ID");
+    const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
+    if (!keyId || !keySecret) {
+      console.error("Razorpay credentials are not configured");
+      return new Response(JSON.stringify({ error: "Payment service unavailable" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const basicAuth = btoa(`${keyId}:${keySecret}`);
 
     const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
@@ -87,15 +106,15 @@ Deno.serve(async (req) => {
     const orderData = await orderRes.json();
     if (!orderRes.ok) {
       console.error("Razorpay order error", orderData);
-      return new Response(
-        JSON.stringify({ error: orderData?.error?.description || "Razorpay error" }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Could not create payment order" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Log payment as 'created'
     const admin = createClient(supabaseUrl, serviceKey);
-    await admin.from("payments").insert({
+    const { error: paymentError } = await admin.from("payments").insert({
       user_id: userId,
       razorpay_order_id: orderData.id,
       amount,
@@ -103,6 +122,13 @@ Deno.serve(async (req) => {
       plan_period: period,
       status: "created",
     });
+    if (paymentError) {
+      console.error("Payment order persistence error", paymentError);
+      return new Response(JSON.stringify({ error: "Could not save payment order" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(
       JSON.stringify({
