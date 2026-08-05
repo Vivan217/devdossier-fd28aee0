@@ -18,9 +18,9 @@ function corsFor(req: Request): Record<string, string> {
   };
 }
 
-const PLANS: Record<string, { amount: number; period: string }> = {
-  monthly: { amount: 9900, period: "monthly" }, // ₹99
-  annual: { amount: 79900, period: "annual" }, // ₹799
+const PLANS: Record<string, { priceInRupees: number; period: string }> = {
+  monthly: { priceInRupees: 99, period: "monthly" },
+  annual: { priceInRupees: 799, period: "annual" },
 };
 
 Deno.serve(async (req) => {
@@ -70,7 +70,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { amount, period } = PLANS[plan];
+    const { priceInRupees, period } = PLANS[plan];
+    const amount = Math.round(priceInRupees * 100); // Razorpay expects paise.
     if (!Number.isInteger(amount) || amount < 100) {
       return new Response(JSON.stringify({ error: "Amount must be at least 100 paise" }), {
         status: 400,
