@@ -127,10 +127,16 @@ export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogP
           }
         },
         modal: {
-          ondismiss: () => setLoading(false),
+          ondismiss: () => {
+            setLoading(false);
+            toast.info("Checkout cancelled", {
+              description: "No payment was taken.",
+            });
+          },
         },
       });
       rzp.on("payment.failed", (resp: { error?: { description?: string } }) => {
+        setLoading(false);
         toast.error("Payment failed", {
           description: resp?.error?.description || "Please try again.",
         });

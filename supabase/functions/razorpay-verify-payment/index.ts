@@ -33,10 +33,25 @@ async function hmacSha256Hex(secret: string, message: string): Promise<string> {
     .join("");
 }
 
+function timingSafeEqual(left: string, right: string): boolean {
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+  return difference === 0;
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = corsFor(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
@@ -67,20 +82,34 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = body || {};
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    if (
+      typeof razorpay_order_id !== "string" ||
+      typeof razorpay_payment_id !== "string" ||
+      typeof razorpay_signature !== "string" ||
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature
+    ) {
       return new Response(JSON.stringify({ error: "Missing fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET")!;
+    const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
+    if (!keySecret) {
+      console.error("Razorpay key secret is not configured");
+      return new Response(JSON.stringify({ error: "Payment service unavailable" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const expected = await hmacSha256Hex(
       keySecret,
       `${razorpay_order_id}|${razorpay_payment_id}`,
     );
 
-    if (expected !== razorpay_signature) {
+    if (!timingSafeEqual(expected, razorpay_signature)) {
       console.warn("Signature mismatch", { userId, razorpay_order_id });
       return new Response(JSON.stringify({ error: "Invalid signature" }), {
         status: 400,
@@ -108,6 +137,12 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    if (payment.status === "paid") {
+      return new Response(
+        JSON.stringify({ success: true, plan: "pro", already_verified: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     const period = payment.plan_period as string;
     const now = new Date();
@@ -118,7 +153,7 @@ Deno.serve(async (req) => {
       proUntil.setMonth(proUntil.getMonth() + 1);
     }
 
-    await admin
+    const { error: paymentUpdateError } = await admin
       .from("payments")
       .update({
         razorpay_payment_id,
@@ -126,8 +161,15 @@ Deno.serve(async (req) => {
         status: "paid",
       })
       .eq("razorpay_order_id", razorpay_order_id);
+    if (paymentUpdateError) {
+      console.error("Payment update error", paymentUpdateError);
+      return new Response(JSON.stringify({ error: "Could not record payment" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    await admin
+    const { error: accountUpdateError } = await admin
       .from("user_accounts")
       .update({
         plan: "pro",
@@ -135,6 +177,13 @@ Deno.serve(async (req) => {
         pro_until: proUntil.toISOString(),
       })
       .eq("user_id", userId);
+    if (accountUpdateError) {
+      console.error("Account upgrade error", accountUpdateError);
+      return new Response(JSON.stringify({ error: "Could not activate Pro plan" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(
       JSON.stringify({ success: true, plan: "pro", pro_until: proUntil.toISOString() }),
