@@ -15,6 +15,31 @@ import { useAuth } from "@/contexts/AuthContext";
 
 type Period = "monthly" | "annual";
 
+interface RazorpaySuccessResponse {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayFailureResponse {
+  error?: {
+    code?: string;
+    description?: string;
+    reason?: string;
+  };
+}
+
+interface RazorpayInstance {
+  open: () => void;
+  on: (event: "payment.failed", callback: (response: RazorpayFailureResponse) => void) => void;
+}
+
+type RazorpayConstructor = new (options: Record<string, unknown>) => RazorpayInstance;
+
+function getRazorpay(): RazorpayConstructor | undefined {
+  return (window as Window & { Razorpay?: RazorpayConstructor }).Razorpay;
+}
+
 interface UpgradeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -46,10 +71,18 @@ const FEATURES = [
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
     if (typeof window === "undefined") return resolve(false);
-    if ((window as any).Razorpay) return resolve(true);
+    if (getRazorpay()) return resolve(true);
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      'script[src="https://checkout.razorpay.com/v1/checkout.js"]',
+    );
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve(Boolean(getRazorpay())), { once: true });
+      existingScript.addEventListener("error", () => resolve(false), { once: true });
+      return;
+    }
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
+    script.onload = () => resolve(Boolean(getRazorpay()));
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
@@ -70,7 +103,11 @@ export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogP
     setLoading(true);
     try {
       const ok = await loadRazorpayScript();
-      if (!ok) throw new Error("Could not load Razorpay checkout");
+      const Razorpay = getRazorpay();
+      if (!ok || !Razorpay) {
+        console.error("Razorpay checkout SDK is unavailable");
+        throw new Error("Could not load Razorpay checkout. Please refresh and try again.");
+      }
 
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
@@ -79,10 +116,27 @@ export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogP
       const { data, error } = await supabase.functions.invoke("razorpay-create-order", {
         body: { plan: period },
       });
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
+      if (error) {
+        console.error("Razorpay order creation request failed", {
+          message: error.message,
+          plan: period,
+        });
+        throw new Error(error.message);
+      }
+      if (data?.error) {
+        console.error("Razorpay order creation API returned an error", {
+          message: data.error,
+          plan: period,
+        });
+        throw new Error(data.error);
+      }
 
-      const Razorpay = (window as any).Razorpay;
+      console.info("Initiating Razorpay checkout", {
+        orderId: data.order_id,
+        amount: data.amount,
+        currency: data.currency,
+        plan: period,
+      });
       const rzp = new Razorpay({
         key: data.key_id,
         amount: data.amount,
@@ -92,11 +146,7 @@ export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogP
         description: `Pro · ${period === "annual" ? "Annual" : "Monthly"} plan`,
         prefill: { email: user.email ?? "" },
         theme: { color: "#3b82f6" },
-        handler: async (response: {
-          razorpay_order_id: string;
-          razorpay_payment_id: string;
-          razorpay_signature: string;
-        }) => {
+        handler: async (response: RazorpaySuccessResponse) => {
           setVerifying(true);
           const verifyToast = toast.loading("Processing payment…", {
             description: "Verifying your payment securely.",
@@ -117,6 +167,7 @@ export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogP
             onUpgraded?.();
             navigate("/success");
           } catch (e: unknown) {
+            console.error("Razorpay payment verification failed", e);
             const msg = e instanceof Error ? e.message : "Verification failed";
             toast.error("Payment verification failed", {
               id: verifyToast,
@@ -135,7 +186,12 @@ export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogP
           },
         },
       });
-      rzp.on("payment.failed", (resp: { error?: { description?: string } }) => {
+      rzp.on("payment.failed", (resp: RazorpayFailureResponse) => {
+        console.error("Razorpay payment failed", {
+          code: resp.error?.code,
+          reason: resp.error?.reason,
+          description: resp.error?.description,
+        });
         setLoading(false);
         toast.error("Payment failed", {
           description: resp?.error?.description || "Please try again.",
@@ -143,6 +199,7 @@ export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogP
       });
       rzp.open();
     } catch (e: unknown) {
+      console.error("Razorpay checkout initiation failed", e);
       const msg = e instanceof Error ? e.message : "Could not start checkout";
       toast.error("Checkout error", { description: msg });
     } finally {
