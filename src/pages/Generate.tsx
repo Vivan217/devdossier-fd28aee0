@@ -17,6 +17,7 @@ import {
   setFeaturedRepos,
   getFeaturedRepos,
   type FeaturedRepo,
+  QuotaExceededError,
 } from "@/services/devdossier";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -30,13 +31,17 @@ const Generate = () => {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [theme, setTheme] = useState<ProfileTheme>("default");
   const [featured, setFeatured] = useState<FeaturedRepo[]>([]);
+  const [pendingUsername, setPendingUsername] = useState<string | null>(null);
 
   const run = async (name: string) => {
     const clean = name.trim().replace(/^@/, "");
     if (!clean) return;
+    // Out of free quota → open Razorpay upgrade flow BEFORE calling generate-profile
     if (quota && quota.plan === "free" && quota.remaining <= 0) {
+      setPendingUsername(clean);
+      setUpgradeOpen(true);
       toast.error("Daily limit reached", {
-        description: "Free plan allows 3 dossiers per day. Upgrade to Pro for unlimited.",
+        description: "Free plan allows 3 dossiers per day. Upgrade to Pro to continue.",
       });
       return;
     }
@@ -51,11 +56,42 @@ const Generate = () => {
       toast.success("Profile generated", { description: `@${clean} is ready to share.` });
       refreshQuota();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to generate profile";
-      toast.error("Could not generate", { description: msg });
+      if (e instanceof QuotaExceededError) {
+        setPendingUsername(clean);
+        setUpgradeOpen(true);
+        toast.error("Daily limit reached", { description: e.message });
+      } else {
+        const msg = e instanceof Error ? e.message : "Failed to generate profile";
+        toast.error("Could not generate", { description: msg });
+      }
       refreshQuota();
     } finally {
       setLoading(false);
+    }
+  };
+
+  // After a successful Razorpay payment the plan is Pro — resume the pending generation
+  const handleUpgraded = async () => {
+    await refreshQuota();
+    const resume = pendingUsername;
+    setPendingUsername(null);
+    if (resume) {
+      setLoading(true);
+      setProfile(null);
+      try {
+        const p = await generateProfile(resume);
+        setProfile(p);
+        setTheme(((p as unknown as { theme?: ProfileTheme }).theme) ?? "default");
+        setFeatured(getFeaturedRepos(p));
+        setParams({ u: resume }, { replace: true });
+        toast.success("Profile generated", { description: `@${resume} is ready to share.` });
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "Failed to generate profile";
+        toast.error("Could not generate", { description: msg });
+      } finally {
+        setLoading(false);
+        refreshQuota();
+      }
     }
   };
 
@@ -244,7 +280,8 @@ const Generate = () => {
       <UpgradeDialog
         open={upgradeOpen}
         onOpenChange={setUpgradeOpen}
-        onUpgraded={refreshQuota}
+        redirectOnSuccess={false}
+        onUpgraded={handleUpgraded}
       />
     </div>
   );
