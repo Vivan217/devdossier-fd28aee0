@@ -280,6 +280,7 @@ const Generate = () => {
       <UpgradeDialog
         open={upgradeOpen}
         onOpenChange={setUpgradeOpen}
+        redirectOnSuccess={false}
         onUpgraded={handleUpgraded}
       />
     </div>
