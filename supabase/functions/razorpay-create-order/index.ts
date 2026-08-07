@@ -79,14 +79,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    const keyId = Deno.env.get("RAZORPAY_KEY_ID");
-    const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
+    const keyId = Deno.env.get("RAZORPAY_KEY_ID")?.trim();
+    const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET")?.trim();
     if (!keyId || !keySecret) {
-      console.error("Razorpay credentials are not configured");
-      return new Response(JSON.stringify({ error: "Payment service unavailable" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      console.error("Razorpay credentials are not configured", {
+        hasKeyId: Boolean(keyId),
+        hasKeySecret: Boolean(keySecret),
       });
+      return new Response(
+        JSON.stringify({ error: "Invalid Razorpay credentials. Please check API keys." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
     const basicAuth = btoa(`${keyId}:${keySecret}`);
 
@@ -106,7 +109,13 @@ Deno.serve(async (req) => {
 
     const orderData = await orderRes.json();
     if (!orderRes.ok) {
-      console.error("Razorpay order error", orderData);
+      console.error("Razorpay order error", { status: orderRes.status, body: orderData });
+      if (orderRes.status === 401 || orderRes.status === 403) {
+        return new Response(
+          JSON.stringify({ error: "Invalid Razorpay credentials. Please check API keys." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
       return new Response(JSON.stringify({ error: "Could not create payment order" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
