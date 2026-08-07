@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, Github, Loader2, Share2, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ const Generate = () => {
   const [theme, setTheme] = useState<ProfileTheme>("default");
   const [featured, setFeatured] = useState<FeaturedRepo[]>([]);
   const [pendingUsername, setPendingUsername] = useState<string | null>(null);
+  const autoRanRef = useRef(false);
 
   const run = async (name: string) => {
     const clean = name.trim().replace(/^@/, "");
@@ -125,9 +126,13 @@ const Generate = () => {
   };
 
   useEffect(() => {
-    if (initial && user) run(initial);
+    // Wait for auth AND quota to load so we never fire a request that is
+    // guaranteed to 429 — and only auto-run once per mount.
+    if (!initial || !user || !quota || autoRanRef.current) return;
+    autoRanRef.current = true;
+    run(initial);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, quota]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
