@@ -24,11 +24,33 @@ export interface TopLanguage {
   count: number;
 }
 
+export class QuotaExceededError extends Error {
+  constructor(message = "Daily limit reached. Upgrade to Pro for unlimited dossiers.") {
+    super(message);
+    this.name = "QuotaExceededError";
+  }
+}
+
 export async function generateProfile(username: string): Promise<Profile> {
   const { data, error } = await supabase.functions.invoke("generate-profile", {
     body: { username },
   });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // Non-2xx responses surface as FunctionsHttpError with the body on context
+    const ctx = (error as unknown as { context?: Response }).context;
+    if (ctx && typeof ctx.status === "number") {
+      let bodyMsg = "";
+      try {
+        const body = await ctx.clone().json();
+        bodyMsg = (body as { error?: string })?.error ?? "";
+      } catch {
+        /* ignore */
+      }
+      if (ctx.status === 429) throw new QuotaExceededError(bodyMsg || undefined);
+      if (bodyMsg) throw new Error(bodyMsg);
+    }
+    throw new Error(error.message);
+  }
   if (data?.error) throw new Error(data.error);
   return data.profile as Profile;
 }
