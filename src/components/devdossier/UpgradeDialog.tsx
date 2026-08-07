@@ -44,6 +44,8 @@ interface UpgradeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpgraded?: () => void;
+  /** Navigate to /success after payment. Disable to stay and resume an action. */
+  redirectOnSuccess?: boolean;
 }
 
 const PLANS: Record<Period, { label: string; price: string; sub: string; bullet: string }> = {
@@ -88,7 +90,12 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogProps) {
+export function UpgradeDialog({
+  open,
+  onOpenChange,
+  onUpgraded,
+  redirectOnSuccess = true,
+}: UpgradeDialogProps) {
   const [period, setPeriod] = useState<Period>("annual");
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -165,7 +172,7 @@ export function UpgradeDialog({ open, onOpenChange, onUpgraded }: UpgradeDialogP
             onOpenChange(false);
             await refreshQuota();
             onUpgraded?.();
-            navigate("/success");
+            if (redirectOnSuccess) navigate("/success");
           } catch (e: unknown) {
             console.error("Razorpay payment verification failed", e);
             const msg = e instanceof Error ? e.message : "Verification failed";
