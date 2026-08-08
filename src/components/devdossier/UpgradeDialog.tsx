@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, Loader2, Zap } from "lucide-react";
 import {
@@ -31,6 +31,7 @@ interface RazorpayFailureResponse {
 
 interface RazorpayInstance {
   open: () => void;
+  close?: () => void;
   on: (event: "payment.failed", callback: (response: RazorpayFailureResponse) => void) => void;
 }
 
@@ -99,6 +100,7 @@ export function UpgradeDialog({
   const [period, setPeriod] = useState<Period>("annual");
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const rzpRef = useRef<RazorpayInstance | null>(null);
   const navigate = useNavigate();
   const { refreshQuota } = useAuth();
 
@@ -106,7 +108,24 @@ export function UpgradeDialog({
     if (open) loadRazorpayScript();
   }, [open]);
 
+  // Never keep a checkout instance around between opens — a stale instance
+  // would re-open the previous (possibly expired) order.
+  const discardCheckout = () => {
+    try {
+      rzpRef.current?.close?.();
+    } catch {
+      /* ignore */
+    }
+    rzpRef.current = null;
+  };
+
+  useEffect(() => {
+    if (!open) discardCheckout();
+    return () => discardCheckout();
+  }, [open]);
+
   const startCheckout = async () => {
+    discardCheckout();
     setLoading(true);
     try {
       const ok = await loadRazorpayScript();
@@ -121,7 +140,8 @@ export function UpgradeDialog({
       if (!user) throw new Error("Not signed in");
 
       const { data, error } = await supabase.functions.invoke("razorpay-create-order", {
-        body: { plan: period },
+        headers: { "Cache-Control": "no-store" },
+        body: { plan: period, nonce: `${Date.now()}-${Math.random().toString(36).slice(2)}` },
       });
       if (error) {
         console.error("Razorpay order creation request failed", {
@@ -144,7 +164,7 @@ export function UpgradeDialog({
         currency: data.currency,
         plan: period,
       });
-      const rzp = new Razorpay({
+      const rzp: RazorpayInstance = new Razorpay({
         key: data.key_id,
         amount: data.amount,
         currency: data.currency,
@@ -185,14 +205,18 @@ export function UpgradeDialog({
           }
         },
         modal: {
+          escape: true,
+          backdropclose: false,
           ondismiss: () => {
             setLoading(false);
+            discardCheckout();
             toast.info("Checkout cancelled", {
               description: "No payment was taken.",
             });
           },
         },
       });
+      rzpRef.current = rzp;
       rzp.on("payment.failed", (resp: RazorpayFailureResponse) => {
         console.error("Razorpay payment failed", {
           code: resp.error?.code,
@@ -200,6 +224,7 @@ export function UpgradeDialog({
           description: resp.error?.description,
         });
         setLoading(false);
+        discardCheckout();
         toast.error("Payment failed", {
           description: resp?.error?.description || "Please try again.",
         });
