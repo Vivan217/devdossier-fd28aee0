@@ -140,7 +140,6 @@ export function UpgradeDialog({
       if (!user) throw new Error("Not signed in");
 
       const { data, error } = await supabase.functions.invoke("razorpay-create-order", {
-        headers: { "Cache-Control": "no-store" },
         body: { plan: period, nonce: `${Date.now()}-${Math.random().toString(36).slice(2)}` },
       });
       if (error) {
