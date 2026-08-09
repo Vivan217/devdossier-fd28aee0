@@ -93,21 +93,35 @@ Deno.serve(async (req) => {
     }
     const basicAuth = btoa(`${keyId}:${keySecret}`);
 
+    const orderPayload = {
+      amount,
+      currency: "INR",
+      receipt: `dd_${userId.slice(0, 8)}_${Date.now()}`,
+      notes: { user_id: userId, plan_period: period },
+    };
+    console.info("Razorpay create-order request payload", {
+      keyIdPrefix: keyId.slice(0, 12),
+      mode: keyId.startsWith("rzp_test") ? "test" : "live",
+      ...orderPayload,
+    });
+
     const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
       headers: {
         Authorization: `Basic ${basicAuth}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        amount,
-        currency: "INR",
-        receipt: `dd_${userId.slice(0, 8)}_${Date.now()}`,
-        notes: { user_id: userId, plan_period: period },
-      }),
+      body: JSON.stringify(orderPayload),
     });
 
     const orderData = await orderRes.json();
+    console.info("Razorpay create-order response", {
+      status: orderRes.status,
+      id: orderData?.id,
+      amount: orderData?.amount,
+      currency: orderData?.currency,
+      status_field: orderData?.status,
+    });
     if (!orderRes.ok) {
       console.error("Razorpay order error", { status: orderRes.status, body: orderData });
       if (orderRes.status === 401 || orderRes.status === 403) {
