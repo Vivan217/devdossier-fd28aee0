@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, Loader2, Zap } from "lucide-react";
+import { AlertTriangle, Check, Copy, Loader2, Zap } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -47,6 +47,16 @@ interface UpgradeDialogProps {
   onUpgraded?: () => void;
   /** Navigate to /success after payment. Disable to stay and resume an action. */
   redirectOnSuccess?: boolean;
+}
+
+interface DiagnosticEntry {
+  id: string;
+  at: string;
+  step: "create-order" | "checkout" | "payment" | "verify-payment";
+  message: string;
+  orderId?: string;
+  paymentId?: string;
+  code?: string;
 }
 
 const PLANS: Record<Period, { label: string; price: string; sub: string; bullet: string }> = {
@@ -100,9 +110,30 @@ export function UpgradeDialog({
   const [period, setPeriod] = useState<Period>("annual");
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<DiagnosticEntry[]>([]);
   const rzpRef = useRef<RazorpayInstance | null>(null);
   const navigate = useNavigate();
   const { refreshQuota } = useAuth();
+
+  const pushDiagnostic = (entry: Omit<DiagnosticEntry, "id" | "at">) => {
+    setDiagnostics((prev) => [
+      ...prev,
+      {
+        ...entry,
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        at: new Date().toISOString(),
+      },
+    ]);
+  };
+
+  const copyDiagnostics = async () => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(diagnostics, null, 2));
+      toast.success("Diagnostics copied");
+    } catch {
+      toast.error("Could not copy diagnostics");
+    }
+  };
 
   useEffect(() => {
     if (open) loadRazorpayScript();
@@ -127,11 +158,17 @@ export function UpgradeDialog({
   const startCheckout = async () => {
     discardCheckout();
     setLoading(true);
+    setDiagnostics([]);
+    let currentOrderId: string | undefined;
     try {
       const ok = await loadRazorpayScript();
       const Razorpay = getRazorpay();
       if (!ok || !Razorpay) {
         console.error("Razorpay checkout SDK is unavailable");
+        pushDiagnostic({
+          step: "checkout",
+          message: "Razorpay checkout SDK failed to load (script blocked or offline).",
+        });
         throw new Error("Could not load Razorpay checkout. Please refresh and try again.");
       }
 
@@ -147,6 +184,7 @@ export function UpgradeDialog({
           message: error.message,
           plan: period,
         });
+        pushDiagnostic({ step: "create-order", message: error.message, code: "invoke_error" });
         throw new Error(error.message);
       }
       if (data?.error) {
@@ -154,8 +192,16 @@ export function UpgradeDialog({
           message: data.error,
           plan: period,
         });
+        pushDiagnostic({ step: "create-order", message: String(data.error), code: "api_error" });
         throw new Error(data.error);
       }
+
+      currentOrderId = data.order_id as string;
+      pushDiagnostic({
+        step: "create-order",
+        message: `Order created · ${data.amount} ${data.currency} · plan ${period}`,
+        orderId: currentOrderId,
+      });
 
       console.info("Initiating Razorpay checkout", {
         orderId: data.order_id,
@@ -184,6 +230,12 @@ export function UpgradeDialog({
             );
             if (vErr) throw new Error(vErr.message);
             if (vd?.error) throw new Error(vd.error);
+            pushDiagnostic({
+              step: "verify-payment",
+              message: "Payment verified successfully.",
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+            });
             toast.success("Welcome to Pro 🎉", {
               id: verifyToast,
               description: "Unlimited generations are now unlocked.",
@@ -195,6 +247,12 @@ export function UpgradeDialog({
           } catch (e: unknown) {
             console.error("Razorpay payment verification failed", e);
             const msg = e instanceof Error ? e.message : "Verification failed";
+            pushDiagnostic({
+              step: "verify-payment",
+              message: msg,
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+            });
             toast.error("Payment verification failed", {
               id: verifyToast,
               description: msg,
@@ -209,6 +267,11 @@ export function UpgradeDialog({
           ondismiss: () => {
             setLoading(false);
             discardCheckout();
+            pushDiagnostic({
+              step: "checkout",
+              message: "Checkout dismissed before payment was submitted.",
+              orderId: currentOrderId,
+            });
             toast.info("Checkout cancelled", {
               description: "No payment was taken.",
             });
@@ -224,6 +287,12 @@ export function UpgradeDialog({
         });
         setLoading(false);
         discardCheckout();
+        pushDiagnostic({
+          step: "payment",
+          message: resp.error?.description || resp.error?.reason || "Payment failed",
+          code: resp.error?.code,
+          orderId: currentOrderId,
+        });
         toast.error("Payment failed", {
           description: resp?.error?.description || "Please try again.",
         });
@@ -232,6 +301,7 @@ export function UpgradeDialog({
     } catch (e: unknown) {
       console.error("Razorpay checkout initiation failed", e);
       const msg = e instanceof Error ? e.message : "Could not start checkout";
+      pushDiagnostic({ step: "checkout", message: msg, orderId: currentOrderId });
       toast.error("Checkout error", { description: msg });
     } finally {
       setLoading(false);
@@ -307,6 +377,35 @@ export function UpgradeDialog({
         <p className="text-xs text-muted-foreground text-center">
           Secure checkout powered by Razorpay (test mode).
         </p>
+
+        {diagnostics.length > 0 && (
+          <div className="mt-2 rounded-lg border border-border bg-background/50 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <AlertTriangle className="h-3.5 w-3.5 text-primary" />
+                Checkout diagnostics
+              </div>
+              <Button variant="ghost" size="sm" className="h-7 px-2" onClick={copyDiagnostics}>
+                <Copy className="mr-1 h-3 w-3" /> Copy
+              </Button>
+            </div>
+            <ul className="mt-2 max-h-40 space-y-2 overflow-y-auto">
+              {diagnostics.map((d) => (
+                <li key={d.id} className="rounded-md bg-muted/40 p-2 font-mono text-[11px] leading-relaxed">
+                  <div className="text-muted-foreground">
+                    {new Date(d.at).toLocaleTimeString()} · {d.step}
+                    {d.code ? ` · ${d.code}` : ""}
+                  </div>
+                  <div className="break-words">{d.message}</div>
+                  {d.orderId && <div className="text-muted-foreground">order_id: {d.orderId}</div>}
+                  {d.paymentId && (
+                    <div className="text-muted-foreground">payment_id: {d.paymentId}</div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
