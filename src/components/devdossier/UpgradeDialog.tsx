@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, Loader2, Zap } from "lucide-react";
+import { AlertTriangle, Check, Copy, Loader2, Zap } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -47,6 +47,16 @@ interface UpgradeDialogProps {
   onUpgraded?: () => void;
   /** Navigate to /success after payment. Disable to stay and resume an action. */
   redirectOnSuccess?: boolean;
+}
+
+interface DiagnosticEntry {
+  id: string;
+  at: string;
+  step: "create-order" | "checkout" | "payment" | "verify-payment";
+  message: string;
+  orderId?: string;
+  paymentId?: string;
+  code?: string;
 }
 
 const PLANS: Record<Period, { label: string; price: string; sub: string; bullet: string }> = {
